@@ -2,23 +2,28 @@ package core
 
 import (
 	"encoding/json"
+	"fmt"
+	"math"
 	"os"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+type Tile struct {
+	Atlas *Atlas
+	Name  string
+}
+
 type Atlas struct {
-	T      rl.Texture2D
-	Frames `json:"frames"`
+	T          rl.Texture2D
+	Frames     `json:"frames"`
+	TotalWidth int
+	MaxHeight  int
 }
 
 type Frame struct {
-	Filename         string `json:"filename"`
-	Frame            Rect   `json:"frame"`
-	Rotated          bool   `json:"rotated"`
-	Trimmed          bool   `json:"trimmed"`
-	SpriteSourceSize Rect   `json:"spriteSourceSize"`
-	SourceSize       Size   `json:"sourceSize"`
+	Name string `json:"name"`
+	Rect Rect   `json:"rect"`
 }
 
 type Rect struct {
@@ -28,25 +33,41 @@ type Rect struct {
 	H int `json:"h"`
 }
 
-type Size struct {
-	W int `json:"w"`
-	H int `json:"h"`
-}
-
 type Frames struct {
 	Frames []Frame `json:"frames"`
 }
 
-var A Atlas
+var GroundAtlas Atlas
+var TempleAtlas Atlas
 
-func TM_CleanUp() {
-	rl.UnloadTexture(A.T)
+func (a Atlas) FrameRect(name string) rl.Rectangle {
+	for _, f := range a.Frames.Frames {
+		if f.Name == name {
+			return rl.Rectangle{X: float32(f.Rect.X), Y: float32(f.Rect.Y), Width: float32(f.Rect.W), Height: float32(f.Rect.H)}
+		}
+	}
+	println("not found!")
+	return rl.Rectangle{}
 }
 
-func LoadGroundAtlas() {
-	t := rl.LoadTexture("./assets/ground.png")
+func TM_CleanUp() {
+	rl.UnloadTexture(GroundAtlas.T)
+}
 
-	data, err := os.ReadFile("./assets/ground.json")
+func LoadAtlases() {
+	GroundAtlas = loadAtlas("ground")
+	TempleAtlas = loadAtlas("temple")
+}
+
+func loadAtlas(name string) Atlas {
+	t := rl.LoadTexture(fmt.Sprintf("./assets/%s.png", name))
+
+	data, err := os.ReadFile(fmt.Sprintf("./assets/%s.json", name))
+
+	for _, v := range data {
+		fmt.Printf("%c", v)
+	}
+
 	if err != nil {
 		panic(err)
 	}
@@ -57,9 +78,16 @@ func LoadGroundAtlas() {
 		panic(err)
 	}
 
-	A = Atlas{T: t, Frames: frames}
+	tw := 0
+	mh := 0
+	for _, v := range frames.Frames {
+		tw += v.Rect.W
+		mh = int(math.Max(float64(mh), float64(v.Rect.H)))
+	}
+
+	return Atlas{T: t, Frames: frames, TotalWidth: tw, MaxHeight: mh}
 }
 
 func DrawTile() {
-	rl.DrawTexturePro(A.T, rl.Rectangle{X: 0, Y: 0, Width: float32(A.Frames.Frames[0].SourceSize.W), Height: float32(A.Frames.Frames[0].SourceSize.H)}, rl.Rectangle{X: 0, Y: 0, Width: 32, Height: 32}, rl.Vector2{}, 0, rl.White)
+
 }
