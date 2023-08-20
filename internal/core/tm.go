@@ -16,7 +16,7 @@ type Tile struct {
 
 type Atlas struct {
 	T          rl.Texture2D
-	Frames     `json:"frames"`
+	Frames     []Frame `json:"frames"`
 	TotalWidth int
 	MaxHeight  int
 }
@@ -33,15 +33,31 @@ type Rect struct {
 	H int `json:"h"`
 }
 
-type Frames struct {
-	Frames []Frame `json:"frames"`
-}
-
 var GroundAtlas Atlas
 var TempleAtlas Atlas
 
+func FindTile(name string) *Tile {
+	if f := GroundAtlas.FindFrame(name); f != nil {
+		return &Tile{Atlas: &GroundAtlas, Name: name}
+	}
+
+	if f := TempleAtlas.FindFrame(name); f != nil {
+		return &Tile{Atlas: &TempleAtlas, Name: name}
+	}
+
+	return nil
+}
+
+func (a Atlas) FindFrame(name string) *Frame {
+	for _, f := range a.Frames {
+		if f.Name == name {
+			return &f
+		}
+	}
+	return nil
+}
 func (a Atlas) FrameRect(name string) rl.Rectangle {
-	for _, f := range a.Frames.Frames {
+	for _, f := range a.Frames {
 		if f.Name == name {
 			return rl.Rectangle{X: float32(f.Rect.X), Y: float32(f.Rect.Y), Width: float32(f.Rect.W), Height: float32(f.Rect.H)}
 		}
@@ -60,32 +76,39 @@ func LoadAtlases() {
 }
 
 func loadAtlas(name string) Atlas {
+
 	t := rl.LoadTexture(fmt.Sprintf("./assets/%s.png", name))
+
+	a := Atlas{T: t, Frames: make([]Frame, 0)}
 
 	data, err := os.ReadFile(fmt.Sprintf("./assets/%s.json", name))
 
-	for _, v := range data {
-		fmt.Printf("%c", v)
-	}
-
 	if err != nil {
 		panic(err)
 	}
 
-	var frames Frames
-	err = json.Unmarshal(data, &frames)
+	type Frames struct {
+		Frames []Frame `json:"frames"`
+	}
+	f := Frames{}
+	err = json.Unmarshal(data, &f)
 	if err != nil {
 		panic(err)
 	}
+
+	a.Frames = f.Frames
 
 	tw := 0
 	mh := 0
-	for _, v := range frames.Frames {
+	for _, v := range a.Frames {
 		tw += v.Rect.W
 		mh = int(math.Max(float64(mh), float64(v.Rect.H)))
 	}
 
-	return Atlas{T: t, Frames: frames, TotalWidth: tw, MaxHeight: mh}
+	a.TotalWidth = tw
+	a.MaxHeight = mh
+
+	return a
 }
 
 func DrawTile() {

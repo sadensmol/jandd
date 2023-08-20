@@ -18,15 +18,10 @@ const (
 	MapLayerIcons
 )
 
+var Map = core.Map{Elements: make([]core.MapElement, 0)}
+
 type MapComponent struct {
 	selectedLayer int
-	elements      []MapElement
-}
-
-type MapElement struct {
-	Tile  *core.Tile
-	Pos   rl.Vector2
-	Layer int
 }
 
 var maskShader rl.Shader
@@ -58,7 +53,7 @@ func (m *MapComponent) Draw(w float32, h float32) {
 			rl.DrawTexturePro(SelectedTile.Atlas.T, f, rl.Rectangle{mPos.X, mPos.Y, f.Width, f.Height}, rl.Vector2{}, 0, rl.White)
 
 			if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
-				m.elements = append(m.elements, MapElement{Tile: SelectedTile, Pos: mPos, Layer: m.selectedLayer})
+				Map.Elements = append(Map.Elements, core.MapElement{Tile: SelectedTile, Pos: mPos, Layer: m.selectedLayer})
 			}
 		}
 
@@ -140,7 +135,7 @@ func (m *MapComponent) drawMapElements() {
 			rl.ClearBackground(rl.Blank)
 		}
 
-		for _, v := range m.elements {
+		for _, v := range Map.Elements {
 			if v.Layer != l { // draw elements only from current layer
 				continue
 			}

@@ -44,7 +44,7 @@ func (t *TilesComponent) Draw(w float32, h float32) {
 	rl.BeginScissorMode(int32(view.X), int32(view.Y), int32(view.Width), int32(view.Height))
 
 	mHov := ""
-	for _, v := range t.selectedAtlas.Frames.Frames {
+	for _, v := range t.selectedAtlas.Frames {
 
 		drawPos := rl.Rectangle{X: panelRec.X + t.panelScroll.X + float32(offset), Y: panelRec.Y + t.panelScroll.Y + float32(pad), Width: float32(v.Rect.W), Height: float32(v.Rect.H)}
 
